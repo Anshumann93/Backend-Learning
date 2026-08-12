@@ -62,11 +62,19 @@ const userRegister = asyncHandler(async (req, res) => {
         password
     });
 
+    const userCreated = await User.findById(User._id).select(
+        "-password -refreshToken"
+    )
+    if(!userCreated){
+        throw new ApiError("500","something went wrong while making the user")
+    }
+
+
     // 8. Send response
     return res.status(201).json(
         new ApiResponse(
             201,
-            user,
+            userCreated,
             "User registered successfully"
         )
     );
