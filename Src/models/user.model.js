@@ -30,16 +30,16 @@ const userSchema=new Schema({
       required:true
     },
     coverImg:{
-      type:String,     // cloudnary url
+      type:String     // cloudnary url
     },
     watchHistory:[  // the [] is for use multiple dynamic values
       {
         type:Schema.Types.ObjectId,
-        ref:{video}
+        ref:"video"
       }
     ],
     password:{
-      type:true,
+      type:String,
       required:[true,"pass is req.."]
     },
     refreshToken:{
@@ -54,7 +54,7 @@ const userSchema=new Schema({
 // by pre means before the saving into db
 
 userSchema.pre("save",async function(next) {
-  if(!this.isModified(this.password)) return next();
+  if(!this.isModified("password")) return next();
   
   this.password= await bcrypt.hash(this.password,10);
   next()
@@ -90,4 +90,4 @@ userSchema.methods.generateAccessToken =async function() {
   )
   }
 
-export const user = mongoose.model("user",userSchema) 
+export const User = mongoose.model("user",userSchema) 
