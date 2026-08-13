@@ -4,6 +4,19 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const genrateAccessTokensAndRefrshToken = async(userId)=>{
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.genrateAccessToken()
+        const refreshToken = user.genrateRefreshToken()
+
+        
+        
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while generating refresh and access token")
+    }
+}
+
 const userRegister = asyncHandler(async (req, res) => {
 
     // 1. Get user details from frontend
@@ -79,5 +92,38 @@ const userRegister = asyncHandler(async (req, res) => {
         )
     );
 });
+ 
+const userLogin = asyncHandler(async(req,res)=>{
 
+    // req.body = data
+    // userbname or email
+    // find data in db
+    // password cheak
+    // access and refresh token
+    // coookies for sendinf the tokens 
+
+    const {email,userName,password}=req.body;
+
+    if(!userName|| !email){
+        throw new ApiError(400,"Email or username is requred.")
+    }
+
+    const user = await User.findOne({
+        $or:[{userName},{email}]
+    })
+
+    if(!user){
+        throw new ApiError(400,"userName or Email not exits")
+    }
+    
+    const passwordCheak=await user.isPasswordCorrect(password)
+
+    if(!passwordCheak){
+        throw new ApiError(401,"Invalid password")
+    }
+
+
+
+
+})
 export { userRegister };

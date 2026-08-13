@@ -77,7 +77,7 @@ userSchema.methods.generateAccessToken =async function() {
      }
   )
 }
-  userSchema.methods.genrateRefreshToken=async function(){
+  userSchema.methods.generateRefreshToken=async function(){
     return JWT.sign(
      {
       _id:this._id,
