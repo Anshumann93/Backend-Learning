@@ -122,8 +122,57 @@ const userLogin = asyncHandler(async(req,res)=>{
         throw new ApiError(401,"Invalid password")
     }
 
+    const {AccessToken,RefreshToken} = await genrateAccessTokensAndRefrshToken(user_id)
+    
+    const LoggendInUser = await User.findById(user_id).select(
+        "-password refreshToken"
+    )
 
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    
+    res.status(200)
+    .cookie("AccessToken",AccessToken,options)
+    .cookie("RefreshToken",RefreshToken,options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+               user: AccessToken,RefreshToken,LoggendInUser
+            },
+            "User Logged In successfully"
+        )
+    )
 
+    const LoggedOut = asyncHandler(async(req,res)=>{
+        await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1 // this removes the field from document
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+    })
 
 })
-export { userRegister };
+export { userRegister,
+         userLogin,
+         LoggedOut
+ };
