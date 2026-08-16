@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 const genrateAccessTokensAndRefrshToken = async(userId)=>{
     try {
@@ -10,8 +11,10 @@ const genrateAccessTokensAndRefrshToken = async(userId)=>{
         const accessToken = user.genrateAccessToken()
         const refreshToken = user.genrateRefreshToken()
 
-        
-        
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })
+
+        return {accessToken, refreshToken}
     } catch (error) {
         throw new ApiError(500,"Something went wrong while generating refresh and access token")
     }
@@ -44,26 +47,29 @@ const userRegister = asyncHandler(async (req, res) => {
     }
 
     // 4. Get image paths
-    const avtarLocalPath = req.files?.avtar?.[0]?.path;
+const avtarLocalPath = req.files?.avtar?.[0]?.path;
 
-    const coverImageLocalPath =
-        req.files?.coverImg?.[0]?.path;
+const coverImageLocalPath =
+    req.files?.coverImage?.[0]?.path;
 
-    if (!avtarLocalPath) {
-        throw new ApiError(400, "Avatar file is required");
-    }
+console.log("AVATAR PATH:", avtarLocalPath);
+console.log("COVER IMAGE PATH:", coverImageLocalPath);
 
-    // 5. Upload avatar to Cloudinary
-    const avtar = await uploadOnCloudinary(avtarLocalPath);
+if (!avtarLocalPath) {
+    throw new ApiError(400, "Avatar file is required");
+}
 
-    if (!avtar) {
-        throw new ApiError(400, "Avatar upload failed");
-    }
+// 5. Upload avatar
+const avtar = await uploadOnCloudinary(avtarLocalPath);
 
-    // 6. Upload cover image if provided
-    const coverImage = coverImageLocalPath
-        ? await uploadOnCloudinary(coverImageLocalPath)
-        : null;
+if (!avtar) {
+    throw new ApiError(400, "Avatar upload failed");
+}
+
+// 6. Upload cover if provided
+const coverImage = coverImageLocalPath
+    ? await uploadOnCloudinary(coverImageLocalPath)
+    : null;
 
     // 7. Create user
     const user = await User.create({
@@ -75,11 +81,11 @@ const userRegister = asyncHandler(async (req, res) => {
         password
     });
 
-    const userCreated = await User.findById(User._id).select(
+    const userCreated = await User.findById(user._id).select(
         "-password -refreshToken"
     )
     if(!userCreated){
-        throw new ApiError("500","something went wrong while making the user")
+        throw new ApiError(500,"something went wrong while making the user")
     }
 
 
@@ -104,7 +110,7 @@ const userLogin = asyncHandler(async(req,res)=>{
 
     const {email,userName,password}=req.body;
 
-    if(!userName|| !email){
+    if(!userName && !email){
         throw new ApiError(400,"Email or username is requred.")
     }
 
@@ -122,7 +128,7 @@ const userLogin = asyncHandler(async(req,res)=>{
         throw new ApiError(401,"Invalid password")
     }
 
-    const {AccessToken,RefreshToken} = await genrateAccessTokensAndRefrshToken(user_id)
+    const {AccessToken,RefreshToken} = await genrateAccessTokensAndRefrshToken(user._id)
     
     const LoggendInUser = await User.findById(user_id).select(
         "-password refreshToken"
@@ -145,7 +151,7 @@ const userLogin = asyncHandler(async(req,res)=>{
             "User Logged In successfully"
         )
     )
-
+    })
     const LoggedOut = asyncHandler(async(req,res)=>{
         await User.findByIdAndUpdate(
         req.user._id,
@@ -171,8 +177,8 @@ const userLogin = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200, {}, "User logged Out"))
     })
 
-})
+
 export { userRegister,
          userLogin,
          LoggedOut
- };
+};
