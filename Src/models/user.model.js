@@ -54,14 +54,13 @@ const userSchema=new Schema({
 // by pre means before the saving into db
 
 userSchema.pre("save",async function(next) {
-  if(!this.isModified("password")) return next();
+  if(!this.isModified("password")) return;
   
   this.password= await bcrypt.hash(this.password,10);
-  next()
 })
 //this code is for comparing the hash saved pass
-userSchema.methods.isPasswordCorrect = async(password)=>{
-    return await bctypt.compare(password,this.password)
+userSchema.methods.isPasswordCorrect = async function(password){
+    return await bcrypt.compare(password,this.password)
 }
 userSchema.methods.generateAccessToken =async function() {
   return JWT.sign(

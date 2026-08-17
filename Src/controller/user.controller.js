@@ -4,18 +4,18 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-
-const genrateAccessTokensAndRefrshToken = async(userId)=>{
-    try {
+    const generateAccessTokensAndRefrshToken= async(userId)=>{
+       try {
         const user = await User.findById(userId)
-        const accessToken = user.genrateAccessToken()
-        const refreshToken = user.genrateRefreshToken()
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
 
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
 
         return {accessToken, refreshToken}
     } catch (error) {
+        console.log("TOKEN GENERATION ERROR:", error)
         throw new ApiError(500,"Something went wrong while generating refresh and access token")
     }
 }
@@ -61,7 +61,7 @@ if (!avtarLocalPath) {
 
 // 5. Upload avatar
 const avtar = await uploadOnCloudinary(avtarLocalPath);
-
+console.log("FILES:", req.files);
 if (!avtar) {
     throw new ApiError(400, "Avatar upload failed");
 }
@@ -108,7 +108,7 @@ const userLogin = asyncHandler(async(req,res)=>{
     // access and refresh token
     // coookies for sendinf the tokens 
 
-    const {email,userName,password}=req.body;
+    const {email,userName,password}=req.body
 
     if(!userName && !email){
         throw new ApiError(400,"Email or username is requred.")
@@ -128,25 +128,27 @@ const userLogin = asyncHandler(async(req,res)=>{
         throw new ApiError(401,"Invalid password")
     }
 
-    const {AccessToken,RefreshToken} = await genrateAccessTokensAndRefrshToken(user._id)
+    const {accessToken,refreshToken} = await generateAccessTokensAndRefrshToken(user._id)
     
-    const LoggendInUser = await User.findById(user_id).select(
-        "-password refreshToken"
+    const LoggendInUser = await User.findById(user._id).select(
+        "-password -refreshToken"
     )
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: false
     }
     
     res.status(200)
-    .cookie("AccessToken",AccessToken,options)
-    .cookie("RefreshToken",RefreshToken,options)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
     .json(
         new ApiResponse(
             200,
             {
-               user: AccessToken,RefreshToken,LoggendInUser
+               accessToken,
+               refreshToken,
+               user: LoggendInUser
             },
             "User Logged In successfully"
         )
@@ -167,7 +169,7 @@ const userLogin = asyncHandler(async(req,res)=>{
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: false
     }
 
     return res

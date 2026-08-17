@@ -1,18 +1,19 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import dns from "node:dns";
 
-dotenv.config({ path: "./.env" });
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 import ConnectDB from "./db/db.connection.js";
 import app from "./app.js";
 
 const PORT = Number(process.env.PORT) || 5000;
+
 console.log("Starting on port", PORT);
 
 ConnectDB()
   .then(() => {
     console.log("MongoDB connected");
+
     app.listen(PORT, () => {
       console.log(`⚙️ Server is running at port : ${PORT}`);
     });
@@ -20,9 +21,6 @@ ConnectDB()
   .catch((err) => {
     console.error("MONGO db connection failed !!!", err);
   });
-
-
-
 
 
 
