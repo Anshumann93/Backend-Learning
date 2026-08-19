@@ -4,8 +4,8 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-// import { verify } from "jsonwebtoken";
-import {VerifyJwt} from "../middleware/auth.middleware.js"
+import jwt from "jsonwebtoken";
+//import {VerifyJwt} from "../middleware/auth.middleware.js"
     const generateAccessTokensAndRefrshToken= async(userId)=>{
        try{
         const user = await User.findById(userId)
@@ -236,6 +236,19 @@ const userLogin = asyncHandler(async(req,res)=>{
         return res
         .status(200)
         .json(new ApiResponse(200,{},"Password Changed Successfully"))
+    })
+  
+    const getCurrentUser= asyncHandler(async(req,res)=>{
+       
+        return res.status(200
+            .json(
+                new ApiError(
+                    200,
+                    req.user,
+                    "user featched Successfully"
+                )
+            )
+        )
     })
 
 export { userRegister,
