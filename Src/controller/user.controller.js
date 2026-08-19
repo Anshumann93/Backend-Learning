@@ -251,8 +251,36 @@ const userLogin = asyncHandler(async(req,res)=>{
         )
     })
 
+    const updateUserDetails = asyncHandler(async(req,res)=>{
+        const {fullName,email}=req.body
+        
+        if(!fullName||!email){
+            throw new ApiError(400,"All feilds are Reqired")
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set:{
+                    fullName,
+                    email:email
+                }
+            },
+            {new:true}
+        )
+        return res.status(201)
+        .json(new ApiResponse(
+            200,
+            user,
+            "User Details Updated Successfully"
+
+        ))
+    })
+
 export { userRegister,
          userLogin,
          LoggedOut,
-         RefrshAccessToken
+         RefrshAccessToken,
+         changePassword,
+         getCurrentUser,
+         updateUserDetails
 };
