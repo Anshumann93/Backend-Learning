@@ -5,6 +5,8 @@ import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import { runInNewContext } from "vm";
+import { asyncWrapProviders } from "async_hooks";
 //import {VerifyJwt} from "../middleware/auth.middleware.js"
     const generateAccessTokensAndRefrshToken= async(userId)=>{
        try{
@@ -272,8 +274,75 @@ const userLogin = asyncHandler(async(req,res)=>{
             200,
             user,
             "User Details Updated Successfully"
-
         ))
+    })
+    
+    const updateCoverImage = asyncHandler(async (req,res)=>{
+
+        const coverImageLocalPath = req.files?.path
+
+        if(!coverImageLocalPath){
+            throw new ApiError(400,"Cover Image not found")
+        }
+
+        const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+        if(!coverImage.url){
+            throw new ApiError(400,"Unaible feach the Cover Image Url")
+        }
+        
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set:{
+                    coverImg:coverImage.url
+                }
+            },
+            {new : True}
+        ).select("-password")
+        
+        res.status(200)
+        .json(
+          new ApiResponse(
+            200,
+            user,
+            "Avatar Image Updated Successfully"
+          )
+        )
+    })
+
+    const updateAvtarImage = asyncHandler(async (req,res)=>{
+
+        const avtarImageLocalPath = req.files?.path
+
+        if(!avtarImageLocalPath){
+            throw new ApiError(400,"Cover avtar not found")
+        }
+
+        const avtarImage = await uploadOnCloudinary(avtarImageLocalPath)
+
+        if(!avtarImage.url){
+            throw new ApiError(400,"Unaible feach the Avatar Image Url")
+        }
+        
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set:{
+                    avtar:avtarImage.url
+                }
+            },
+            {new : True}
+        ).select("-password")
+        
+        res.status(200)
+        .json(
+          new ApiResponse(
+            200,
+            user,
+            "Avatar Image Updated Successfully"
+          )
+        )
     })
 
 export { userRegister,
@@ -282,5 +351,7 @@ export { userRegister,
          RefrshAccessToken,
          changePassword,
          getCurrentUser,
-         updateUserDetails
+         updateUserDetails,
+         updateAvtarImage,
+         updateCoverImage
 };
